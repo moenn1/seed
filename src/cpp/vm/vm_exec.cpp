@@ -1,4 +1,5 @@
 #include "seed/vm.h"
+#include "seed/value.h"
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -9,12 +10,12 @@ namespace {
 struct Frame {
   const bc::Function* fn{};
   int pc{0};
-  std::vector<long long> locals; // int-only for now
+  std::vector<Value> locals; // tagged values
   Frame() = default;
-  explicit Frame(const bc::Function* f): fn(f), locals(f->nlocals, 0) {}
+  explicit Frame(const bc::Function* f): fn(f), locals(f->nlocals, Value::Nil()) {}
 };
 
-inline bool truthy(long long v) { return v != 0; }
+inline bool truthy(const Value& v) { return v.truthy(); }
 
 } // namespace
 
@@ -22,15 +23,15 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
   int entryIdx = mod.findFuncByName(entry);
   if (entryIdx < 0) { err = "Entry function '" + entry + "' not found"; return false; }
 
-  std::vector<long long> stack;
+  std::vector<Value> stack;
   std::vector<Frame> callstack;
   callstack.emplace_back(&mod.funcs[entryIdx]);
 
   auto pop = [&](){
     if (stack.empty()) throw std::runtime_error("Stack underflow");
-    long long v = stack.back(); stack.pop_back(); return v;
+    Value v = stack.back(); stack.pop_back(); return v;
   };
-  auto push = [&](long long v){ stack.push_back(v); };
+  auto push = [&](const Value& v){ stack.push_back(v); };
 
   try {
     while (!callstack.empty()) {
@@ -52,7 +53,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
         case Op::CONST: {
           int idx = ins.a;
           if (idx < 0 || idx >= (int)mod.consts.size()) throw std::runtime_error("CONST out of range");
-          push(mod.consts[idx]);
+          push(Value::fromInt(mod.consts[idx]));
           break;
         }
         case Op::LOAD: {
@@ -64,7 +65,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
         case Op::STORE: {
           int i = ins.a;
           if (i < 0 || i >= (int)fr.locals.size()) throw std::runtime_error("STORE out of range");
-          long long v = pop();
+          Value v = pop();
           fr.locals[i] = v;
           break;
         }
@@ -77,23 +78,23 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
           push(stack.back());
           break;
         }
-        case Op::ADD: { long long b = pop(), a = pop(); push(a + b); break; }
-        case Op::SUB: { long long b = pop(), a = pop(); push(a - b); break; }
-        case Op::MUL: { long long b = pop(), a = pop(); push(a * b); break; }
-        case Op::DIV: { long long b = pop(), a = pop(); push(a / b); break; }
-        case Op::NOT: { long long a = pop(); push(truthy(a) ? 0 : 1); break; }
-        case Op::EQ:  { long long b = pop(), a = pop(); push(a == b); break; }
-        case Op::NE:  { long long b = pop(), a = pop(); push(a != b); break; }
-        case Op::LT:  { long long b = pop(), a = pop(); push(a <  b); break; }
-        case Op::LE:  { long long b = pop(), a = pop(); push(a <= b); break; }
-        case Op::GT:  { long long b = pop(), a = pop(); push(a >  b); break; }
-        case Op::GE:  { long long b = pop(), a = pop(); push(a >= b); break; }
+        case Op::ADD: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() + b.asInt())); break; }
+        case Op::SUB: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() - b.asInt())); break; }
+        case Op::MUL: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() * b.asInt())); break; }
+        case Op::DIV: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() / b.asInt())); break; }
+        case Op::NOT: { Value a = pop(); push(Value::fromBool(!truthy(a))); break; }
+        case Op::EQ:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() == b.asInt())); break; }
+        case Op::NE:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() != b.asInt())); break; }
+        case Op::LT:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() <  b.asInt())); break; }
+        case Op::LE:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() <= b.asInt())); break; }
+        case Op::GT:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() >  b.asInt())); break; }
+        case Op::GE:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() >= b.asInt())); break; }
         case Op::JMP: {
           fr.pc = fr.pc + ins.a;
           break;
         }
         case Op::JMP_IF_FALSE: {
-          long long c = pop();
+          Value c = pop();
           if (!truthy(c)) {
             fr.pc = fr.pc + ins.a;
           }
@@ -106,7 +107,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
           const bc::Function* cal = &mod.funcs[fidx];
           if (argc != cal->arity) throw std::runtime_error("CALL arity mismatch");
           // collect args from stack (rightmost on top)
-          std::vector<long long> args(argc);
+          std::vector<Value> args(argc);
           for (int i = argc - 1; i >= 0; --i) { args[i] = pop(); }
           // push new frame
           callstack.emplace_back(cal);
@@ -116,7 +117,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
           break;
         }
         case Op::RET: {
-          long long rv = stack.empty() ? 0 : pop();
+          Value rv = stack.empty() ? Value::Nil() : pop();
           callstack.pop_back();
           if (!callstack.empty()) {
             push(rv);
@@ -126,7 +127,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
           break;
         }
         case Op::PRINT: {
-          long long v = pop();
+          Value v = pop();
           out << v << "\n";
           break;
         }
