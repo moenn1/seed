@@ -38,7 +38,8 @@ package "C++ Backend" {
 
   VMLoader --> VMInterp
   VMInterp --> RuntimeGC
-  AOTSeedc --> ARM64Asm --> NativeBin
+  AOTSeedc --> ARM64Asm
+  ARM64Asm --> NativeBin
 }
 
 package "LLVM Path" {
