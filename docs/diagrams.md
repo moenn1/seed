@@ -33,14 +33,14 @@ rectangle "LLVM Path" {
   [LLVM IR Builder] --> [ORC JIT]
 }
 
-[Source .seed] --> [Lexer]
+[Source (.seed)] --> [Lexer]
 [Tokens] --> [Parser]
 [Parser] --> [AST]
 [AST] --> [Resolver/Checks]
 [Resolver/Checks] --> [IR/Bytecode]
 [IR/Bytecode] --> [BytecodeDump CLI]
 [IR/Bytecode] --> [Compile CLI (to .sbc)]
-[.sbc] --> [VM Loader]
+[SBC (.sbc)] --> [VM Loader]
 [VM Loader] --> [VM Interpreter]
 [IR/Bytecode] --> [AOT seedc]
 [IR/Bytecode] --> [LLVM IR Builder]
@@ -69,22 +69,22 @@ package com.seed.lexer {
 
 package com.seed.ast {
   interface Expr
-  class Expr.Literal
-  class Expr.Variable
-  class Expr.Unary
-  class Expr.Binary
-  class Expr.Grouping
-  class Expr.Call
+  class "Expr.Literal" as ExprLiteral
+  class "Expr.Variable" as ExprVariable
+  class "Expr.Unary" as ExprUnary
+  class "Expr.Binary" as ExprBinary
+  class "Expr.Grouping" as ExprGrouping
+  class "Expr.Call" as ExprCall
 
   interface Stmt
-  class Stmt.Let
-  class Stmt.ExprStmt
-  class Stmt.Print
-  class Stmt.Block
-  class Stmt.If
-  class Stmt.While
-  class Stmt.Return
-  class Stmt.Fun
+  class "Stmt.Let" as StmtLet
+  class "Stmt.ExprStmt" as StmtExprStmt
+  class "Stmt.Print" as StmtPrint
+  class "Stmt.Block" as StmtBlock
+  class "Stmt.If" as StmtIf
+  class "Stmt.While" as StmtWhile
+  class "Stmt.Return" as StmtReturn
+  class "Stmt.Fun" as StmtFun
 
   class AstPrinter
 }
