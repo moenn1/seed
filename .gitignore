@@ -1,0 +1,6 @@
+scripts/milestone*.sh
+build/
+build_llvm/
+cmake-build-*/
+out/
+java/target/
