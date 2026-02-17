@@ -125,3 +125,9 @@ Contributing / exercises
 
 License
 - Educational project; license TBD. For now, treat as all-rights-reserved for private learning unless a LICENSE file is added.
+## Where is the GC code?
+
+- Header (API and notes): src/include/seed/gc.h
+- C++ stub (planned collector hooks): src/cpp/vm/gc.cpp
+- VM integration points: src/include/seed/vm.h and src/cpp/vm/vm_exec.cpp (roots: VM operand stack + each frame's locals)
+- Documentation: docs/06-vm-gc.md (design notes and roadmap)
