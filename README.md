@@ -1,5 +1,8 @@
 # Seed: a teaching compiler/VM
 
+![Overview](overview.png)
+
+
 This repo hosts:
 - Java frontend (lexer/parser/interpreter) in `seed/java`
 - C++ backend/runtime/VM in `seed/src/cpp` with CMake build
