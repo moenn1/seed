@@ -1,12 +1,45 @@
 #include "seed/vm.h"
 #include "seed/value.h"
+#include "seed/gc.h"
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <cstdlib>
 
 using namespace seed;
 
 namespace {
+static const char* opname(bc::Op op) {
+  using Op = bc::Op;
+  switch (op) {
+    case Op::ENTER: return "ENTER";
+    case Op::LEAVE: return "LEAVE";
+    case Op::CONST: return "CONST";
+    case Op::LOAD: return "LOAD";
+    case Op::STORE: return "STORE";
+    case Op::POP: return "POP";
+    case Op::DUP: return "DUP";
+    case Op::ADD: return "ADD";
+    case Op::SUB: return "SUB";
+    case Op::MUL: return "MUL";
+    case Op::DIV: return "DIV";
+    case Op::MOD: return "MOD";
+    case Op::NOT: return "NOT";
+    case Op::EQ: return "EQ";
+    case Op::NE: return "NE";
+    case Op::LT: return "LT";
+    case Op::LE: return "LE";
+    case Op::GT: return "GT";
+    case Op::GE: return "GE";
+    case Op::JMP: return "JMP";
+    case Op::JMP_IF_FALSE: return "JMP_IF_FALSE";
+    case Op::CALL: return "CALL";
+    case Op::RET: return "RET";
+    case Op::PRINT: return "PRINT";
+    default: return "UNKNOWN";
+  }
+}
+
 struct Frame {
   const bc::Function* fn{};
   int pc{0};
@@ -27,11 +60,43 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
   std::vector<Frame> callstack;
   callstack.emplace_back(&mod.funcs[entryIdx]);
 
+  // Debug trace (stderr) if set
+  bool trace = false;
+  if (const char* t = std::getenv("SEED_TRACE")) {
+    std::string tv(t);
+    trace = (!tv.empty() && tv != "0" && tv != "false" && tv != "FALSE");
+  }
+
   auto pop = [&](){
     if (stack.empty()) throw std::runtime_error("Stack underflow");
     Value v = stack.back(); stack.pop_back(); return v;
   };
   auto push = [&](const Value& v){ stack.push_back(v); };
+
+  // Optional periodic GC: collect every N executed instructions using current roots
+  std::size_t op_count = 0;
+  long gc_every = 0;
+  if (const char* g = std::getenv("SEED_GC_EVERY")) {
+    try { gc_every = std::stol(std::string(g)); } catch (...) { gc_every = 0; }
+    if (gc_every < 0) gc_every = 0;
+  }
+
+  auto collect_roots = [&](){
+    if (gc_every <= 0) return;
+    std::vector<void*> roots;
+    roots.reserve(stack.size());
+    // Stack roots
+    for (const auto& v : stack) {
+      if (v.isObj() && v.asObj() != nullptr) roots.push_back(v.asObj());
+    }
+    // Frame local roots
+    for (const auto& fr2 : callstack) {
+      for (const auto& lv : fr2.locals) {
+        if (lv.isObj() && lv.asObj() != nullptr) roots.push_back(lv.asObj());
+      }
+    }
+    gc::collect(roots);
+  };
 
   try {
     while (!callstack.empty()) {
@@ -41,6 +106,16 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
       }
       const bc::Instr& ins = fr.fn->code[fr.pc++];
       using Op = bc::Op;
+      ++op_count;
+      if (gc_every > 0 && (op_count % static_cast<std::size_t>(gc_every) == 0)) {
+        collect_roots();
+      }
+
+      if (trace) {
+        std::cerr << "[pc=" << (fr.pc - 1) << "] " << opname(ins.op)
+                  << " a=" << ins.a << " b=" << ins.b
+                  << " stack=" << stack.size() << "\n";
+      }
       switch (ins.op) {
         case Op::ENTER: {
           // locals already sized to nlocals
@@ -82,6 +157,7 @@ bool VM::run(const bc::Module& mod, const std::string& entry, std::ostream& out,
         case Op::SUB: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() - b.asInt())); break; }
         case Op::MUL: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() * b.asInt())); break; }
         case Op::DIV: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() / b.asInt())); break; }
+        case Op::MOD: { Value b = pop(), a = pop(); push(Value::fromInt(a.asInt() % b.asInt())); break; }
         case Op::NOT: { Value a = pop(); push(Value::fromBool(!truthy(a))); break; }
         case Op::EQ:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() == b.asInt())); break; }
         case Op::NE:  { Value b = pop(), a = pop(); push(Value::fromBool(a.asInt() != b.asInt())); break; }
