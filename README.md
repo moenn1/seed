@@ -16,9 +16,9 @@ Core compiler concepts (quick definitions)
   - Frontend: turns source text into a well-formed abstract representation and verifies meaning
     - Lexing (scanner): transforms characters into tokens (identifiers, numbers, operators)
     - Parsing: turns tokens into an AST (abstract syntax tree) according to a grammar
-    - Static semantics (resolver/checks): builds symbol tables, checks arity/duplicates/types, reports diagnostics
+    - Static semantics (resolver/checks): builds symbol tables, checks arity/duplicates/types, reports diagnostics
   - Backend: lowers a verified program into a target for execution (bytecode VM, native code, or JIT)
-    - IR/Bytecode: a target-agnostic instruction set thats easy to interpret and transform
+    - IR/Bytecode: a target-agnostic instruction set thats easy to interpret and transform
     - Code generation: maps IR to a specific CPU/OS (AOT), or generates/executes code at runtime (JIT)
     - Runtime/GC: services like printing, memory management, garbage collection (planned)
 - AOT vs JIT:
@@ -28,22 +28,22 @@ Core compiler concepts (quick definitions)
 
 Repository layout
 - docs/
-  - README.md  start-here index and run commands
-  - diagrams.md  PlantUML diagrams of the whole system
+  - README.md  start-here index and run commands
+  - diagrams.md  PlantUML diagrams of the whole system
   - 02-parser-ast.md, 03-interpreter.md, 04-static-semantics.md, 05-ir-bytecode.md
-  - 06-vm-gc.md  VM details and early GC notes
-  - 07-aot-arm64.md  AOT slice (ARM64 assembly, Mach-O notes)
-  - 08-llvm-jit.md  LLVM ORC JIT slice (LLJIT)
-  - cpp-code-walkthrough.md  verbose, file-by-file explanation of the C++ code
-- examples/  sample .seed programs
-- java/  Java frontend (lexer/parser/interpreter/sema/bytecode) + CLIs
-- src/include/seed/  shared C++ headers (bytecode, vm, codegen)
-- src/cpp/  C++ sources:
-  - vm/  VM interpreter, loader, (future) GC
-  - codegen/  AOT (a64_emit.cpp), LLVM JIT (llvm_jit.cpp)
-  - apps/  seedvm (VM), seedc (AOT), seedjit (JIT), seeddasm (bytecode disassembler)
-- scripts/  helper scripts (e.g., disasm.sh for Mach-O binaries)
-- tests/  C++ tests (sanity)
+  - 06-vm-gc.md  VM details and early GC notes
+  - 07-aot-arm64.md  AOT slice (ARM64 assembly, Mach-O notes)
+  - 08-llvm-jit.md  LLVM ORC JIT slice (LLJIT)
+  - cpp-code-walkthrough.md  verbose, file-by-file explanation of the C++ code
+- examples/  sample .seed programs
+- java/  Java frontend (lexer/parser/interpreter/sema/bytecode) + CLIs
+- src/include/seed/  shared C++ headers (bytecode, vm, codegen)
+- src/cpp/  C++ sources:
+  - vm/  VM interpreter, loader, (future) GC
+  - codegen/  AOT (a64_emit.cpp), LLVM JIT (llvm_jit.cpp)
+  - apps/  seedvm (VM), seedc (AOT), seedjit (JIT), seeddasm (bytecode disassembler)
+- scripts/  helper scripts (e.g., disasm.sh for Mach-O binaries)
+- tests/  C++ tests (sanity)
 
 Quick start
 
