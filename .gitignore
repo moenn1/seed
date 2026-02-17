@@ -4,3 +4,4 @@ build_llvm/
 cmake-build-*/
 out/
 java/target/
+scripts/docs_patch.sh
