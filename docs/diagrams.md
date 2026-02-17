@@ -11,42 +11,61 @@ This document provides PlantUML diagrams to visualize the architecture and data 
 skinparam monochrome true
 title Seed Pipeline Overview
 
-rectangle "Java Frontend" {
-  [Lexer] --> [Tokens]
-  [Parser] --> [AST]
-  [Resolver/Checks]
-  [AST] --> [IR/Bytecode]
+package "Java Frontend" {
+  component "Lexer" as Lexer
+  component "Tokens" as Tokens
+  component "Parser" as Parser
+  component "AST" as AST
+  component "Resolver/Checks" as ResolverChecks
+
+  Lexer --> Tokens
+  Parser --> AST
+  AST --> ResolverChecks
 }
 
-rectangle "Tooling" {
-  [BytecodeDump CLI]
-  [Compile CLI (to .sbc)]
+package "Tooling" {
+  component "BytecodeDump CLI" as BytecodeDump
+  component "Compile CLI (to .sbc)" as CompileSBC
 }
 
-rectangle "C++ Backend" {
-  [VM Loader] --> [VM Interpreter]
-  [VM Interpreter] --> [Runtime/GC]
-  [AOT seedc] --> [ARM64 Asm] --> [Native Binary]
+package "C++ Backend" {
+  component "VM Loader" as VMLoader
+  component "VM Interpreter" as VMInterp
+  component "Runtime/GC" as RuntimeGC
+  component "AOT seedc" as AOTSeedc
+  component "ARM64 Asm" as ARM64Asm
+  component "Native Binary" as NativeBin
+
+  VMLoader --> VMInterp
+  VMInterp --> RuntimeGC
+  AOTSeedc --> ARM64Asm --> NativeBin
 }
 
-rectangle "LLVM Path" {
-  [LLVM IR Builder] --> [ORC JIT]
+package "LLVM Path" {
+  component "LLVM IR Builder" as LLVMBuilder
+  component "ORC JIT" as ORCJIT
+
+  LLVMBuilder --> ORCJIT
 }
 
-[Source (.seed)] --> [Lexer]
-[Tokens] --> [Parser]
-[Parser] --> [AST]
-[AST] --> [Resolver/Checks]
-[Resolver/Checks] --> [IR/Bytecode]
-[IR/Bytecode] --> [BytecodeDump CLI]
-[IR/Bytecode] --> [Compile CLI (to .sbc)]
-[SBC (.sbc)] --> [VM Loader]
-[VM Loader] --> [VM Interpreter]
-[IR/Bytecode] --> [AOT seedc]
-[IR/Bytecode] --> [LLVM IR Builder]
-[ORC JIT] --> [print: 8]
-[Native Binary] --> [print: 8]
-[VM Interpreter] --> [print: 8]
+component "Source (.seed)" as SourceSeed
+component "IR/Bytecode" as IRBC
+component "SBC (.sbc)" as SBC
+component "print: 8" as PRINT8
+
+SourceSeed --> Lexer
+Tokens --> Parser
+Parser --> AST
+AST --> ResolverChecks
+ResolverChecks --> IRBC
+IRBC --> BytecodeDump
+IRBC --> CompileSBC
+SBC --> VMLoader
+IRBC --> AOTSeedc
+IRBC --> LLVMBuilder
+ORCJIT --> PRINT8
+NativeBin --> PRINT8
+VMInterp --> PRINT8
 @enduml
 ```
 
