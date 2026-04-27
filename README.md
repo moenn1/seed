@@ -22,7 +22,7 @@ Core compiler concepts (quick definitions)
     - Code generation: maps IR to a specific CPU/OS (AOT), or generates/executes code at runtime (JIT)
     - Runtime/GC: services like printing, memory management, garbage collection (planned)
 - AOT vs JIT:
-  - AOT: compile to a native binary ahead of time (e.g., seedc ’ ARM64 assembly ’ clang ’ executable)
+  - AOT: compile to a native binary ahead of time (e.g., seedc â€™ ARM64 assembly â€™ clang â€™ executable)
   - JIT: compile on the fly in-process via an engine (e.g., LLVM ORC LLJIT), enabling dynamic optimization
 - GC (planned): automatically reclaim memory for heap objects by tracing reachability (roots = VM stack + frames)
 
@@ -101,12 +101,12 @@ Learning path (with docs)
 - Deep dive on C++: docs/cpp-code-walkthrough.md (file-by-file explanations, ABI notes, exercises)
 
 HotSpot/Graal mapping crib sheet
-- Frontend ’ javac/Graal frontend parsers and type checkers
-- IR/Bytecode ’ HotSpot/Graal IR tiers (e.g., HIR/LIR) and JVM bytecode concepts
-- VM Interpreter ’ HotSpot template interpreter (baseline execution)
-- AOT ’ analogous to Graal Native Image / static compilation (limited here, for teaching)
-- JIT ’ analogous to HotSpot C1/C2 or Graal JIT, but here via LLVM ORC LLJIT
-- GC ’ design ideas towards generational GC with barriers and safepoints (planned)
+- Frontend â€™ javac/Graal frontend parsers and type checkers
+- IR/Bytecode â€™ HotSpot/Graal IR tiers (e.g., HIR/LIR) and JVM bytecode concepts
+- VM Interpreter â€™ HotSpot template interpreter (baseline execution)
+- AOT â€™ analogous to Graal Native Image / static compilation (limited here, for teaching)
+- JIT â€™ analogous to HotSpot C1/C2 or Graal JIT, but here via LLVM ORC LLJIT
+- GC â€™ design ideas towards generational GC with barriers and safepoints (planned)
 
 Troubleshooting (macOS/ARM64)
 - llvm-objdump errors with unsupported flags:
@@ -117,12 +117,12 @@ Troubleshooting (macOS/ARM64)
   - Varargs and register widths matter: x0 must hold the format pointer, integer arg must be in w1; preserve values around ADRP/ADD materialization
 
 Contributing / exercises
-- Try adding a new opcode (e.g., MOD) end-to-end (lexer ’ parser ’ compiler ’ VM)
+- Try adding a new opcode (e.g., MOD) end-to-end (lexer â€™ parser â€™ compiler â€™ VM)
 - Enable a VM trace mode to print each executed instruction and stack state
 - Generalize the AOT emitter to handle more bytecode patterns
 - Extend the LLVM JIT to lower arbitrary bytecode to LLVM IR and experiment with optimization levels
 - Prototype a tagged value representation + a simple mark-sweep GC
-
+- 
 License
 - Educational project; license TBD. For now, treat as all-rights-reserved for private learning unless a LICENSE file is added.
 ## Where is the GC code?
